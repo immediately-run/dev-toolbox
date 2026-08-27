@@ -1,4 +1,14 @@
-# Working in this repo
+# Working in this repo — Dev toolbox
+
+**Dev toolbox** is an immediately.run app: a set of pure client-side developer
+tools (JSON, regex, encoders, hashes, diff, generators, text, color, character
+map). Tools live in `src/tools/`, algorithms in `src/lib/`, shared UI in
+`src/components/`, and per-tool "last input" persistence goes through
+`src/hooks/useToolState.ts` → `src/lib/persist.ts` → `src/lib/store.ts`
+(`<private>/last/<toolId>.json`, debounced, memory fallback). Add a tool by
+registering it in `src/data/tools.ts`, creating `src/tools/<Name>Tool.tsx`, and
+adding a case to `src/components/ToolPane.tsx`. No runtime npm deps beyond
+React — implement small algorithms in `src/lib/` and unit-test them in node.
 
 This is an **immediately.run app**: React + TypeScript that loads from GitHub and
 transpiles in the browser (no server, no build step at runtime). Keep the rules
