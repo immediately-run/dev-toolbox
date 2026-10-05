@@ -1,7 +1,7 @@
 // Persistence over the immediately.run filesystem — the canonical pattern for the
 // example apps. Validated on the host 2026-08-27 (spike): openSettings, createSpace,
 // requestMount, mount('space:<id>') all work. The spike's "watch fires ONLY for own
-// writes" finding is SUPERSEDED: R3-409's relay (live-verified 2026-10-01) surfaces
+// writes" finding is superseded: R3-409's relay (live-verified 2026-10-01) surfaces
 // remote writes as fs.promises.watch events, so shared stores WATCH (R3-901).
 //
 // Import from SDK subpaths (never the package barrel): the barrel has a module-eval
