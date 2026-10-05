@@ -1,7 +1,8 @@
 // Persistence over the immediately.run filesystem — the canonical pattern for the
 // example apps. Validated on the host 2026-08-27 (spike): openSettings, createSpace,
-// requestMount, mount('space:<id>') all work; fs.promises.watch fires ONLY for this
-// tab's own writes, so shared stores are polled.
+// requestMount, mount('space:<id>') all work. The spike's "watch fires ONLY for own
+// writes" finding is superseded: R3-409's relay (live-verified 2026-10-01) surfaces
+// remote writes as fs.promises.watch events, so shared stores WATCH (R3-901).
 //
 // Import from SDK subpaths (never the package barrel): the barrel has a module-eval
 // side effect that throws under plain `vite dev` (no host transport).
@@ -133,39 +134,3 @@ export async function removeFile(path: string): Promise<void> {
 export const newId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-/**
- * Poll a directory for changes (shared spaces get NO remote watch events, so this is
- * the live-update mechanism). Calls `onChange` when the (name → mtime/size) map
- * differs from the last poll. Returns a stop function.
- */
-export function pollDir(dir: string, onChange: () => void, intervalMs = 3000): () => void {
-  let last: string | null = null; // null = never polled (an empty dir is a valid '' signature)
-  let stopped = false;
-  const tick = async () => {
-    if (stopped) return;
-    try {
-      const names = await fs.promises.readdir(dir);
-      const sig = (
-        await Promise.all(
-          names.map(async (n) => {
-            try {
-              const s = await fs.promises.stat(join(dir, n));
-              return `${n}:${s.mtimeMs}:${s.size}`;
-            } catch {
-              return `${n}:?`;
-            }
-          }),
-        )
-      ).join('|');
-      if (last !== null && sig !== last) onChange();
-      last = sig;
-    } catch {
-      /* dir missing yet */
-    }
-    if (!stopped) setTimeout(tick, intervalMs);
-  };
-  void tick();
-  return () => {
-    stopped = true;
-  };
-}
