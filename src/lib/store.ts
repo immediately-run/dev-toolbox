@@ -133,39 +133,3 @@ export async function removeFile(path: string): Promise<void> {
 export const newId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-/**
- * Poll a directory for changes (shared spaces get NO remote watch events, so this is
- * the live-update mechanism). Calls `onChange` when the (name → mtime/size) map
- * differs from the last poll. Returns a stop function.
- */
-export function pollDir(dir: string, onChange: () => void, intervalMs = 3000): () => void {
-  let last: string | null = null; // null = never polled (an empty dir is a valid '' signature)
-  let stopped = false;
-  const tick = async () => {
-    if (stopped) return;
-    try {
-      const names = await fs.promises.readdir(dir);
-      const sig = (
-        await Promise.all(
-          names.map(async (n) => {
-            try {
-              const s = await fs.promises.stat(join(dir, n));
-              return `${n}:${s.mtimeMs}:${s.size}`;
-            } catch {
-              return `${n}:?`;
-            }
-          }),
-        )
-      ).join('|');
-      if (last !== null && sig !== last) onChange();
-      last = sig;
-    } catch {
-      /* dir missing yet */
-    }
-    if (!stopped) setTimeout(tick, intervalMs);
-  };
-  void tick();
-  return () => {
-    stopped = true;
-  };
-}
